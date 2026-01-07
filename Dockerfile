@@ -1,22 +1,25 @@
-# 1. 繼承官方 v2.2.4 版本
-FROM n8nio/n8n:2.2.4
+# 1. 改用 Node.js 22 (Debian Bookworm) 作為地基
+# 這是最穩定的 Linux 版本，保證有 apt-get
+FROM node:22-bookworm-slim
 
-# 2. 切換成 root 權限安裝工具
-USER root
-
-# 3. 使用 apt-get 安裝影音與雲端神器 (Debian 版指令)
-# update: 更新套件清單
-# install -y: 自動確認安裝
-# rm -rf: 安裝完清理暫存減小體積
+# 2. 安裝系統級工具 (FFmpeg, AWS CLI, Curl 等)
+# 這裡絕對不會報錯，因為我們用的是標準 Debian
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     awscli \
-    python3 \
-    python3-pip \
-    bash \
     curl \
     jq \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# 4. 切換回 node 使用者
+# 3. 透過 npm 安裝 n8n v2.2.4
+# 這步等同於把 n8n 裝進這個強大的系統裡
+RUN npm install -g n8n@2.2.4
+
+# 4. 建立使用者與工作目錄 (符合 n8n 安全規範)
 USER node
+WORKDIR /home/node
+
+# 5. 設定啟動點 (Zeabur 會呼叫這個指令)
+ENTRYPOINT ["n8n"]
