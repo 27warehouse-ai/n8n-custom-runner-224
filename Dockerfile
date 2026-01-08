@@ -1,18 +1,29 @@
-# ⚠️ 專用於 Runners 服務 (剪輯師)
-# 使用官方 Runner 映像檔作為地基 (通常是 Alpine 架構，支援 apk)
-FROM n8nio/runners:latest
+# 🏆 最終選擇：基於 Debian 的全能映像檔
+# 使用 Node.js 22 (Bookworm) - 穩定、相容性高、有 apt-get
+FROM node:22-bookworm-slim
 
-# 切換成 root 來安裝工具
-USER root
-
-# 安裝 FFmpeg 與 AWS CLI
-# 因為是 runners 映像檔，這裡的 apk 指令通常是有效的
-RUN apk add --no-cache \
+# 1. 更新系統並安裝 "軍火庫" (FFmpeg, Python, AWS CLI)
+# 使用 apt-get，這是最標準的 Linux 安裝方式，保證成功
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    aws-cli \
+    awscli \
     bash \
     curl \
-    jq
+    jq \
+    python3 \
+    python3-pip \
+    ca-certificates \
+    git \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
 
-# 切換回 node 使用者 (符合 n8n 安全規範)
+# 2. 安裝 n8n (鎖定版本 2.2.4)
+# 這樣我們就不用依賴官方被閹割的 runner image
+RUN npm install -g n8n@2.2.4
+
+# 3. 建立工作目錄與權限
+WORKDIR /home/node
 USER node
+
+# 4. 啟動指令 (預設)
+ENTRYPOINT ["n8n"]
