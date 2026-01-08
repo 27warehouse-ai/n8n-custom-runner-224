@@ -1,9 +1,9 @@
-# 🏆 最終選擇：基於 Debian 的全能映像檔
-# 使用 Node.js 22 (Bookworm) - 穩定、相容性高、有 apt-get
+# 🏆 最終定案：基於 Debian 的全能自動化引擎
+# 使用 Node.js 22 (Bookworm) - 穩定、相容性高
 FROM node:22-bookworm-slim
 
-# 1. 更新系統並安裝 "軍火庫" (FFmpeg, Python, AWS CLI)
-# 使用 apt-get，這是最標準的 Linux 安裝方式，保證成功
+# 1. 安裝系統工具 (FFmpeg, Python, AWS CLI)
+# 使用 apt-get 安裝，確保所有依賴都齊全
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     awscli \
@@ -18,12 +18,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. 安裝 n8n (鎖定版本 2.2.4)
-# 這樣我們就不用依賴官方被閹割的 runner image
 RUN npm install -g n8n@2.2.4
 
-# 3. 建立工作目錄與權限
+# 3. 設定工作目錄
 WORKDIR /home/node
+
+# 4. 切換回安全使用者
 USER node
 
-# 4. 啟動指令 (預設)
-ENTRYPOINT ["n8n"]
+# 5. ⚠️ 關鍵修正：直接定義完整的啟動指令
+# 我們直接告訴它：「你就是一個 Worker，並且開啟內部 task runner」
+# 這樣 Zeabur 的 Command 欄位就可以留空，不會出錯
+CMD ["n8n", "worker"]
