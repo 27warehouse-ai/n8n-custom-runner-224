@@ -1,25 +1,27 @@
-# 使用官方 Task Runner (最新版，經確認為 Debian 基底)
-FROM n8nio/runners:latest
+# 1. 選擇基底：使用 Node.js 20 的 Alpine 版本 (輕量、穩定、有 apk)
+FROM node:20-alpine
 
-# 切換 root 安裝工具
-USER root
-
-# 改用 apt-get (Debian 專用) 來安裝 FFmpeg 和其他工具
-# 注意：這裡的語法跟 Alpine 不一樣
-RUN apt-get update && \
-    apt-get install -y \
+# 2. 系統層安裝：這一步是官方 Image 做不到的，我們自己來
+# 安裝 FFmpeg (處理影片), Curl, Python3, AWS CLI
+RUN apk add --no-cache \
     ffmpeg \
     curl \
     python3 \
-    python3-pip \
-    awscli \
-    && rm -rf /var/lib/apt/lists/*
+    py3-pip \
+    aws-cli \
+    bash \
+    && rm -rf /var/cache/apk/*
 
-# 建立暫存目錄並給予權限
+# 3. 應用層安裝：全域安裝 n8n
+# 這樣我們就擁有了一個完整的 n8n Runner
+RUN npm install -g n8n
+
+# 4. 準備工作目錄
 RUN mkdir -p /tmp/render && chmod 777 /tmp/render
 
-# 切換回 node 使用者
+# 5. 安全性：切換回 node 使用者
 USER node
 
-# 強制指定啟動指令 (Task Runner 模式)
+# 6. 啟動指令：明確告訴它「我是 Runner」
+# 避開 Python 錯誤，專注於 JavaScript 和 FFmpeg
 CMD ["node", "/usr/local/lib/node_modules/n8n/dist/task-runner-javascript/index.js"]
