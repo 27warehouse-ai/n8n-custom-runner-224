@@ -33,3 +33,8 @@ ENV EXECUTIONS_DATA_PRUNE=true
 ENV EXECUTIONS_DATA_MAX_AGE=168
 
 USER node
+
+# ==========================================
+# 🔑 步驟 4: 關鍵修復 - 啟動 Task Runner 而非完整 n8n
+# ==========================================
+ENTRYPOINT ["/usr/local/bin/task-runner-launcher", "javascript"]
