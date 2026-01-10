@@ -1,24 +1,25 @@
-# 1. 使用官方 Task Runner (Alpine 版) - 這是解鎖 FFmpeg 的關鍵
+# 使用官方 Task Runner (最新版，經確認為 Debian 基底)
 FROM n8nio/runners:latest
 
-# 2. 切換 root 安裝工具
+# 切換 root 安裝工具
 USER root
 
-# 3. 安裝 FFmpeg, CURL, Python3, AWS CLI (一次裝好，不再缺件)
-# 注意：這裡的 aws-cli 是為了讓你未來有擴充性，如果不裝也沒關係，但 FFmpeg 必裝
-RUN apk add --no-cache \
+# 改用 apt-get (Debian 專用) 來安裝 FFmpeg 和其他工具
+# 注意：這裡的語法跟 Alpine 不一樣
+RUN apt-get update && \
+    apt-get install -y \
     ffmpeg \
     curl \
     python3 \
-    py3-pip \
-    aws-cli \
-    && rm -rf /var/cache/apk/*
+    python3-pip \
+    awscli \
+    && rm -rf /var/lib/apt/lists/*
 
-# 4. 建立暫存目錄並給予權限
+# 建立暫存目錄並給予權限
 RUN mkdir -p /tmp/render && chmod 777 /tmp/render
 
-# 5. 切換回 node 使用者 (安全規範)
+# 切換回 node 使用者
 USER node
 
-# 6. (補回) 強制指定啟動指令，確保 Zeabur 不會跑錯
+# 強制指定啟動指令 (Task Runner 模式)
 CMD ["node", "/usr/local/lib/node_modules/n8n/dist/task-runner-javascript/index.js"]
