@@ -1,24 +1,24 @@
-# 1. 使用官方專用的 Task Runner 映像 (基於 Alpine Linux)
-# 注意：這是 runners 映像，不是 n8n 映像
+# 1. 使用官方 Task Runner (Alpine 版) - 這是解鎖 FFmpeg 的關鍵
 FROM n8nio/runners:latest
 
-# 2. 切換成 root 來安裝工具
+# 2. 切換 root 安裝工具
 USER root
 
-# 3. 使用 apk 安裝 FFmpeg (因為是 Alpine，所以用 apk)
-# 同時安裝 python3 確保相容性
+# 3. 安裝 FFmpeg, CURL, Python3, AWS CLI (一次裝好，不再缺件)
+# 注意：這裡的 aws-cli 是為了讓你未來有擴充性，如果不裝也沒關係，但 FFmpeg 必裝
 RUN apk add --no-cache \
     ffmpeg \
     curl \
     python3 \
     py3-pip \
+    aws-cli \
     && rm -rf /var/cache/apk/*
 
-# 4. 建立工作目錄 (給 FFmpeg 暫存用)
+# 4. 建立暫存目錄並給予權限
 RUN mkdir -p /tmp/render && chmod 777 /tmp/render
 
 # 5. 切換回 node 使用者 (安全規範)
 USER node
 
-# 6. 啟動指令 (指向 Task Runner 的入口)
+# 6. (補回) 強制指定啟動指令，確保 Zeabur 不會跑錯
 CMD ["node", "/usr/local/lib/node_modules/n8n/dist/task-runner-javascript/index.js"]
