@@ -1,24 +1,24 @@
-FROM node:22-bookworm-slim
+FROM n8nio/n8n:latest
 
-# 安裝系統依賴
-RUN apt-get update && apt-get install -y \
+# 切換到 root 使用者
+USER root
+
+# 安裝 FFmpeg, AWS CLI, Python3（使用 apk，因為是 Alpine）
+RUN apk add --no-cache \
     ffmpeg \
-    awscli \
+    aws-cli \
     python3 \
-    python3-pip \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+    py3-pip \
+    curl
 
-# 安裝最新版 n8n
-RUN npm install -g n8n
-
-# 設定環境變數（保險起見還是加上）
+# 設定環境變數
 ENV NODE_FUNCTION_ALLOW_BUILTIN=*
 ENV NODE_FUNCTION_ALLOW_EXTERNAL=*
 ENV N8N_DEFAULT_BINARY_DATA_MODE=default
+ENV N8N_RUNNERS_DISABLED_MODULES=""
 
-# 設定工作目錄
-WORKDIR /data
+# 切換回 node 使用者
+USER node
 
-# 啟動 n8n worker
-CMD ["n8n", "worker"]
+# 使用預設的 n8n 啟動指令
+CMD ["n8n"]
