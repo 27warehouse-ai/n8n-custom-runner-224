@@ -1,26 +1,35 @@
+# 使用 n8n 最新版本
 FROM n8nio/n8n:latest
 
 USER root
 
-# 複製 Task Runner 配置檔
-COPY n8n-task-runners.json /etc/n8n-task-runners.json
-RUN chmod 644 /etc/n8n-task-runners.json
+# ==========================================
+# 步驟 1: 重新安裝 APK（因為官方 v2.x 移除了它）
+# ==========================================
+RUN ARCH=$(uname -m) && \
+    wget -qO- "http://dl-cdn.alpinelinux.org/alpine/latest-stable/main/${ARCH}/" | \
+    grep -o 'href="apk-tools-static-[^"]*\.apk"' | head -1 | cut -d'"' -f2 | \
+    xargs -I {} wget -q "http://dl-cdn.alpinelinux.org/alpine/latest-stable/main/${ARCH}/{}" && \
+    tar -xzf apk-tools-static-*.apk && \
+    ./sbin/apk.static -X http://dl-cdn.alpinelinux.org/alpine/latest-stable/main \
+        -U --allow-untrusted add apk-tools && \
+    rm -rf sbin apk-tools-static-*.apk
 
-# 更新套件列表並安裝 FFmpeg, Python3, AWS CLI 等工具
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    python3 \
-    python3-pip \
-    awscli \
-    && rm -rf /var/lib/apt/lists/*
+# ==========================================
+# 步驟 2: 現在可以正常使用 apk 安裝 FFmpeg
+# ==========================================
+RUN apk update && \
+    apk add --no-cache ffmpeg ffmpeg-dev && \
+    rm -rf /var/cache/apk/*
 
-USER node
-
-# 環境變數
+# ==========================================
+# 步驟 3: 設定環境變數（針對高負載場景優化）
+# ==========================================
 ENV N8N_DEFAULT_BINARY_DATA_MODE=default
+ENV NODE_FUNCTION_ALLOW_BUILTIN=*
+ENV NODE_FUNCTION_ALLOW_EXTERNAL=*
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV EXECUTIONS_DATA_PRUNE=true
 ENV EXECUTIONS_DATA_MAX_AGE=168
-ENV N8N_RUNNERS_ENABLED=true
-ENV N8N_RUNNERS_MODE=external
-ENV N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+
+USER node
