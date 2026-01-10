@@ -9,6 +9,7 @@ RUN apk update && \
 
 USER runner
 
-# 設置環境變數
+# 明確設置環境變數（清空所有禁用清單）
 ENV NODE_FUNCTION_ALLOW_BUILTIN=*
 ENV NODE_FUNCTION_ALLOW_EXTERNAL=*
+ENV N8N_RUNNERS_DISABLED_MODULES=
